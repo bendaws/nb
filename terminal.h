@@ -19,11 +19,14 @@
 */
 
 #ifndef TERMINAL_H
-#define TEMINAL_H
+#define TERMINAL_H
 
+#include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
+
+#include "error.h"
 
 void T_getwinsize(int* rows, int* columns) {
     struct winsize w;
@@ -41,8 +44,13 @@ void T_exitraw() {
 }
 
 void T_enterraw() {
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) exit('TG');
-    atexit(T_exitraw);
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) E_report(E_error(
+        "cannot get original termios",
+        "terminal.h/void T_enterraw() { }",
+        "tcgetattr returned -1",
+        true
+    ));
+    
     struct termios raw = orig_termios;
 
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
@@ -52,7 +60,16 @@ void T_enterraw() {
     raw.c_cc[VMIN] = 0;
     raw.c_cc[VTIME] = 1;
 
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) exit('TS');
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) E_report(E_error(
+        "cannot enter raw mode",
+        "terminal.h/void T_enterraw() { }",
+        "tcsetattr returned -1",
+        true
+    ));
+}
+
+void T_clearscr() {
+    printf("\033[2J");
 }
 
 #endif

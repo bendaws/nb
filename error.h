@@ -1,4 +1,4 @@
-// nb.c - main entrance point for nb
+// error.h - error handler
 /*
     Copyright (C) 2025 Ben Daws
 
@@ -18,46 +18,47 @@
     USA
 */
 
-#define NB_VERSION "1.0"
-#define NB_COPYRIGHT_YEARS "2022 - 2025"
+#ifndef ERROR_H
+#define ERROR_H
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "terminal.h"
-#include "cursor.h"
-#include "editor.h"
-#include "error.h"
 
-void initEditor() {
-    E.cpos.x = 0;
-    E.cpos.y = 0;
+struct errorEvent {
+    char* msg; // Error msg: eg. (Something failed)
+    char* trace; // Stack trace (where it happened)
+    char* info;
 
-    T_enterraw();
-    atexit(T_exitraw);
-    
-    T_getwinsize(&E.T_rows, &E.T_columns);
+    int crash; // 1 to make a crash screen
+};
 
-    E.filename = "";
+struct errorEvent E_error(char* msg, char* src, char* info, bool doCrash) {
+    struct errorEvent new;
+
+    new.msg = msg;
+    new.trace = src;
+    new.info = info;
+    new.crash = doCrash >= 1;
+
+    return new;
 }
 
-int main(int argc, char* *argv) {
-    char* filename = "";
+void E_report(struct errorEvent err) {
+    if (err.crash) {
+        // crash screen
+        T_exitraw();
+        T_clearscr();
 
-    if (argc >= 2) {
-        filename = argv[1];
+        printf("nb_crash:\n\r# Event details:\n\r");
+        printf("#\tMessage: %s\n\r", err.msg);
+        printf("#\tTrace:   %s\n\r", err.trace);
+        printf("#\tInfo:    %s\n\r", err.info);
+
+        exit(1);
     }
-
-    initEditor();
-    T_enterraw();
-
-    E_report(E_error(
-        "test error",
-        "nb.c/int main(int argc, char* argv) { }",
-        "E_report",
-        true
-    ));
-
-    return 0;
 }
+
+#endif

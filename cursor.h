@@ -35,4 +35,9 @@ void cursor_move(struct cursor self) {
     write(STDOUT_FILENO, txt, len);
 }
 
+struct cursor cursor_home() {
+    struct cursor C = {0, 0};
+    return C;
+}
+
 #endif
